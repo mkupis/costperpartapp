@@ -47,16 +47,14 @@ def calculate_parts_fitting(input_data):
         "part_height_with_spacing": part_height,
     }
 
-# Function to visualize chamber with multiple static views
+# Function to visualize chamber with Isometric and Top Views
 def visualize_chamber_3d_multiple_views(result, input_data):
     chamber_width, chamber_depth, chamber_height = result["chamber_dimensions"]
     part_color = "#4FC3CA"
     line_color = "#152E35"
     angles = [
-        (0, 0, "Front View"),
-        (90, 0, "Side View"),
-        (0, 90, "Top View"),
-        (45, 45, "Isometric View")
+        (45, 45, "Isometric View"),
+        (0, 90, "Top View")
     ]
 
     buffers = []
@@ -110,7 +108,6 @@ def visualize_chamber_3d_multiple_views(result, input_data):
         ax.set_xlabel("Width (mm)", color=line_color)
         ax.set_ylabel("Depth (mm)", color=line_color)
         ax.set_zlabel("Height (mm)", color=line_color)
-        ax.set_title(view_name, color=line_color)
 
         # Save to buffer
         buffer = BytesIO()
@@ -121,7 +118,7 @@ def visualize_chamber_3d_multiple_views(result, input_data):
 
     return buffers
 
-# Function to generate the PDF report with multiple views
+# Function to generate the PDF report with Isometric and Top Views
 def generate_pdf(input_data, result, view_buffers):
     pdf = FPDF()
     pdf.add_page()
@@ -146,7 +143,6 @@ def generate_pdf(input_data, result, view_buffers):
         pdf.set_font("Arial", size=18)
         pdf.set_text_color(79, 195, 202)
         pdf.cell(0, 10, txt=view_name, ln=True, align="C")
-        pdf.ln(5)
         pdf.image(buffer, x=10, y=30, w=190)
 
     # Save to buffer
