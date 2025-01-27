@@ -106,7 +106,7 @@ part_depth = st.number_input("Part Depth (mm)", min_value=1, value=50)
 part_height = st.number_input("Part Height (mm)", min_value=1, value=100)
 
 # Dynamic Spacing Fields Based on Solvent
-solvent = st.selectbox("Select Solvent", ["", "PURE"], index=0)
+solvent = st.selectbox("Select Solvent", ["FA326", "PURE"], index=0)
 
 # Default spacing values
 default_spacing_width = 10
