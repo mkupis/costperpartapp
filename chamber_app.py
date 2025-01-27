@@ -2,8 +2,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from fpdf import FPDF
 
 
 def calculate_parts_fitting(input_data):
@@ -104,32 +103,29 @@ def visualize_chamber_3d(result, input_data):
 
 
 def generate_pdf(input_data, result, plot_buffer):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    # Add title and parameters
+    pdf.cell(200, 10, txt="Chamber Parts Fitting Report", ln=True, align="C")
+    pdf.cell(0, 10, f"Machine Type: {input_data['machine_type']}", ln=True)
+    pdf.cell(0, 10, f"Solvent: {input_data['solvent']}", ln=True)
+    pdf.cell(0, 10, f"Part Dimensions (mm): {input_data['part_width']}x{input_data['part_depth']}x{input_data['part_height']}", ln=True)
+
+    # Add results
+    pdf.cell(0, 10, f"Total Parts: {result['total_parts']}", ln=True)
+    pdf.cell(0, 10, f"Parts Along Width: {result['parts_along_width']}", ln=True)
+    pdf.cell(0, 10, f"Parts Along Depth: {result['parts_along_depth']}", ln=True)
+    pdf.cell(0, 10, f"Parts Along Height: {result['parts_along_height']}", ln=True)
+
+    # Add the plot
+    plot_image = BytesIO(plot_buffer.getvalue())
+    pdf.image(plot_image, x=10, y=80, w=190)
+
+    # Return PDF buffer
     buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=letter)
-    c.setFont("Helvetica", 12)
-
-    # Title
-    c.drawString(30, 750, "Chamber Parts Fitting Report")
-    c.drawString(30, 730, f"Machine Type: {input_data['machine_type']}")
-    c.drawString(30, 710, f"Solvent: {input_data['solvent']}")
-    c.drawString(30, 690, f"Part Dimensions (mm):")
-    c.drawString(50, 670, f"Width: {input_data['part_width']}")
-    c.drawString(50, 650, f"Depth: {input_data['part_depth']}")
-    c.drawString(50, 630, f"Height: {input_data['part_height']}")
-    c.drawString(30, 610, f"Spacing Dimensions (mm):")
-    c.drawString(50, 590, f"Width: {input_data['spacing_width']}")
-    c.drawString(50, 570, f"Depth: {input_data['spacing_depth']}")
-    c.drawString(50, 550, f"Height: {input_data['spacing_height']}")
-
-    # Results
-    c.drawString(30, 530, f"Total Parts Fitted: {result['total_parts']}")
-    c.drawString(30, 510, f"Parts Along Width: {result['parts_along_width']}")
-    c.drawString(30, 490, f"Parts Along Depth: {result['parts_along_depth']}")
-    c.drawString(30, 470, f"Parts Along Height: {result['parts_along_height']}")
-
-    # Add plot image
-    c.drawImage(plot_buffer, 100, 200, width=400, height=250)
-    c.save()
+    pdf.output(buffer)
     buffer.seek(0)
     return buffer
 
