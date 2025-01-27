@@ -165,5 +165,6 @@ if st.button("Generate Report"):
     if result:
         st.write(f"Total Parts: {result['total_parts']}")
         plot_buffer = visualize_chamber_3d(result, input_data)
+        st.image(plot_buffer, caption="3D Visualization of Parts in Chamber", use_column_width=True)
         pdf_buffer = generate_pdf(input_data, result, plot_buffer)
         st.download_button("Download PDF Report", data=pdf_buffer, file_name="report.pdf", mime="application/pdf")
