@@ -1,7 +1,6 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import numpy as np
 
 
 def calculate_parts_fitting(input_data):
@@ -25,7 +24,6 @@ def calculate_parts_fitting(input_data):
     effective_chamber_depth = chamber_depth - chamber_clearance_depth
     effective_chamber_height = chamber_height - chamber_clearance_height
 
-    # Include spacing in the effective part dimensions
     part_width = input_data.get("part_width", 0) + input_data.get("spacing_width", 0)
     part_depth = input_data.get("part_depth", 0) + input_data.get("spacing_depth", 0)
     part_height = input_data.get("part_height", 0) + input_data.get("spacing_height", 0)
@@ -106,10 +104,25 @@ machine_type = st.selectbox("Select Machine Type", ["SF50", "SF100"])
 part_width = st.number_input("Part Width (mm)", min_value=1, value=50)
 part_depth = st.number_input("Part Depth (mm)", min_value=1, value=50)
 part_height = st.number_input("Part Height (mm)", min_value=1, value=100)
-spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=10)
-spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=10)
-spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=30)
-solvent = st.selectbox("Select Solvent", ["", "PURE"])
+
+# Dynamic Spacing Fields Based on Solvent
+solvent = st.selectbox("Select Solvent", ["", "PURE"], index=0)
+
+# Default spacing values
+default_spacing_width = 10
+default_spacing_depth = 10
+default_spacing_height = 30
+
+# Adjust spacing if solvent is PURE
+if solvent == "PURE":
+    default_spacing_width += 10
+    default_spacing_depth += 10
+    default_spacing_height += 10
+
+# Display input fields for spacing, pre-populated with dynamic values
+spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=default_spacing_width)
+spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=default_spacing_depth)
+spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=default_spacing_height)
 
 # Prepare Input Data
 input_data = {
@@ -123,7 +136,7 @@ input_data = {
     "solvent": solvent,
 }
 
-if st.button("Visualize"):
+if st.button("Calculate and Visualize"):
     result = calculate_parts_fitting(input_data)
     if result:
         st.write(f"Total Parts: {result['total_parts']}")
