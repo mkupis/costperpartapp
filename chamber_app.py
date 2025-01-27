@@ -4,7 +4,6 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from io import BytesIO
 from fpdf import FPDF
 
-
 def calculate_parts_fitting(input_data):
     machine_type = input_data.get("machine_type", "").strip()
     if machine_type == "SF50":
@@ -20,7 +19,6 @@ def calculate_parts_fitting(input_data):
     if solvent == "PURE":
         chamber_clearance_width += 50
         chamber_clearance_depth += 50
-        # Spacing height is constant and doesn't change dynamically.
 
     effective_chamber_width = chamber_width - chamber_clearance_width
     effective_chamber_depth = chamber_depth - chamber_clearance_depth
@@ -48,16 +46,18 @@ def calculate_parts_fitting(input_data):
         "part_height_with_spacing": part_height,
     }
 
-
 def visualize_chamber_3d(result, input_data):
     chamber_width, chamber_depth, chamber_height = result["chamber_dimensions"]
+    part_color = "#4FC3CA"  # Hardcoded part color
+    line_color = "#152E35"  # Hardcoded line color
+
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
 
     for z in [0, chamber_height]:
         ax.plot([0, chamber_width, chamber_width, 0, 0],
                 [0, 0, chamber_depth, chamber_depth, 0],
-                z, color="black")
+                z, color=line_color)
 
     x_offset = (chamber_width - result["parts_along_width"] * result["part_width_with_spacing"]) / 2
     y_offset = (chamber_depth - result["parts_along_depth"] * result["part_depth_with_spacing"]) / 2
@@ -88,11 +88,16 @@ def visualize_chamber_3d(result, input_data):
                     [vertices[0], vertices[1], vertices[2], vertices[3]],
                     [vertices[4], vertices[5], vertices[6], vertices[7]]
                 ]
-                ax.add_collection3d(Poly3DCollection(faces, alpha=0.6, facecolors="green", edgecolors="black"))
+                ax.add_collection3d(Poly3DCollection(faces, alpha=0.6, facecolors=part_color, edgecolors=line_color))
 
     ax.set_xlim([0, chamber_width])
     ax.set_ylim([0, chamber_depth])
     ax.set_zlim([0, chamber_height])
+
+    # Set label colors
+    ax.set_xlabel("Width (mm)", color=line_color)
+    ax.set_ylabel("Depth (mm)", color=line_color)
+    ax.set_zlabel("Height (mm)", color=line_color)
 
     # Save the plot to a buffer
     buffer = BytesIO()
@@ -101,29 +106,24 @@ def visualize_chamber_3d(result, input_data):
     plt.close(fig)
     return buffer
 
-
 def generate_pdf(input_data, result, plot_buffer):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
 
-    # Add title and parameters
     pdf.cell(200, 10, txt="Chamber Parts Fitting Report", ln=True, align="C")
     pdf.cell(0, 10, f"Machine Type: {input_data['machine_type']}", ln=True)
     pdf.cell(0, 10, f"Solvent: {input_data['solvent']}", ln=True)
     pdf.cell(0, 10, f"Part Dimensions (mm): {input_data['part_width']}x{input_data['part_depth']}x{input_data['part_height']}", ln=True)
 
-    # Add results
     pdf.cell(0, 10, f"Total Parts: {result['total_parts']}", ln=True)
     pdf.cell(0, 10, f"Parts Along Width: {result['parts_along_width']}", ln=True)
     pdf.cell(0, 10, f"Parts Along Depth: {result['parts_along_depth']}", ln=True)
     pdf.cell(0, 10, f"Parts Along Height: {result['parts_along_height']}", ln=True)
 
-    # Add the plot
     plot_image = BytesIO(plot_buffer.getvalue())
     pdf.image(plot_image, x=10, y=80, w=190)
 
-    # Return PDF buffer
     buffer = BytesIO()
     pdf.output(buffer)
     buffer.seek(0)
@@ -143,9 +143,8 @@ solvent = st.selectbox("Select Solvent", ["", "PURE", "FA326", "FA9202"], index=
 # Spacing Input
 spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=10 if solvent != "PURE" else 20)
 spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=10 if solvent != "PURE" else 20)
-spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=30)  # Always starts at 30
+spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=30)
 
-# Password Input
 password = st.text_input("Enter Password", type="password")
 
 # Prepare Input Data
@@ -159,6 +158,26 @@ input_data = {
     "spacing_height": spacing_height,
     "solvent": solvent,
 }
+
+# Custom Button Styles
+st.markdown("""
+    <style>
+        div.stButton > button:first-child {
+            background-color: #4FC3CA;
+            color: white;
+        }
+        div.stButton > button:first-child:hover {
+            background-color: #3BA2B0;
+        }
+        div.stDownloadButton > button {
+            background-color: green;
+            color: white;
+        }
+        div.stDownloadButton > button:hover {
+            background-color: darkgreen;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 if st.button("Generate Report"):
     if password != "w6g2piZRbnjG1RF":
