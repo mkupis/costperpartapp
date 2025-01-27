@@ -25,6 +25,7 @@ def calculate_parts_fitting(input_data):
     effective_chamber_depth = chamber_depth - chamber_clearance_depth
     effective_chamber_height = chamber_height - chamber_clearance_height
 
+    # Include spacing in the effective part dimensions
     part_width = input_data.get("part_width", 0) + input_data.get("spacing_width", 0)
     part_depth = input_data.get("part_depth", 0) + input_data.get("spacing_depth", 0)
     part_height = input_data.get("part_height", 0) + input_data.get("spacing_height", 0)
@@ -41,7 +42,10 @@ def calculate_parts_fitting(input_data):
         "effective_chamber_width": effective_chamber_width,
         "effective_chamber_depth": effective_chamber_depth,
         "effective_chamber_height": effective_chamber_height,
-        "chamber_dimensions": (chamber_width, chamber_depth, chamber_height)
+        "chamber_dimensions": (chamber_width, chamber_depth, chamber_height),
+        "part_width_with_spacing": part_width,
+        "part_depth_with_spacing": part_depth,
+        "part_height_with_spacing": part_height,
     }
 
 
@@ -50,22 +54,24 @@ def visualize_chamber_3d(result, input_data):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
 
+    # Draw the chamber as a wireframe
     for z in [0, chamber_height]:
         ax.plot([0, chamber_width, chamber_width, 0, 0],
                 [0, 0, chamber_depth, chamber_depth, 0],
                 z, color="black")
 
-    x_offset = (chamber_width - result["parts_along_width"] * input_data["part_width"]) / 2
-    y_offset = (chamber_depth - result["parts_along_depth"] * input_data["part_depth"]) / 2
-    z_offset = (chamber_height - result["parts_along_height"] * input_data["part_height"]) / 2
+    x_offset = (chamber_width - result["parts_along_width"] * result["part_width_with_spacing"]) / 2
+    y_offset = (chamber_depth - result["parts_along_depth"] * result["part_depth_with_spacing"]) / 2
+    z_offset = (chamber_height - result["parts_along_height"] * result["part_height_with_spacing"]) / 2
 
     for i in range(result["parts_along_width"]):
         for j in range(result["parts_along_depth"]):
             for k in range(result["parts_along_height"]):
-                x_start = x_offset + i * input_data["part_width"]
-                y_start = y_offset + j * input_data["part_depth"]
-                z_start = z_offset + k * input_data["part_height"]
+                x_start = x_offset + i * result["part_width_with_spacing"]
+                y_start = y_offset + j * result["part_depth_with_spacing"]
+                z_start = z_offset + k * result["part_height_with_spacing"]
 
+                # Draw the part (without spacing)
                 vertices = [
                     [x_start, y_start, z_start],
                     [x_start + input_data["part_width"], y_start, z_start],
