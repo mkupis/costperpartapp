@@ -1,6 +1,9 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from io import BytesIO
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 
 def calculate_parts_fitting(input_data):
@@ -52,7 +55,6 @@ def visualize_chamber_3d(result, input_data):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
 
-    # Draw the chamber as a wireframe
     for z in [0, chamber_height]:
         ax.plot([0, chamber_width, chamber_width, 0, 0],
                 [0, 0, chamber_depth, chamber_depth, 0],
@@ -69,7 +71,6 @@ def visualize_chamber_3d(result, input_data):
                 y_start = y_offset + j * result["part_depth_with_spacing"]
                 z_start = z_offset + k * result["part_height_with_spacing"]
 
-                # Draw the part (without spacing)
                 vertices = [
                     [x_start, y_start, z_start],
                     [x_start + input_data["part_width"], y_start, z_start],
@@ -93,36 +94,63 @@ def visualize_chamber_3d(result, input_data):
     ax.set_xlim([0, chamber_width])
     ax.set_ylim([0, chamber_depth])
     ax.set_zlim([0, chamber_height])
-    st.pyplot(fig)
+
+    # Save the plot to a buffer
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    plt.close(fig)
+    return buffer
 
 
-# Streamlit UI
-st.title("Chamber Parts Fitting Visualizer")
+def generate_pdf(input_data, result, plot_buffer):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    c.setFont("Helvetica", 12)
+
+    # Title
+    c.drawString(30, 750, "Chamber Parts Fitting Report")
+    c.drawString(30, 730, f"Machine Type: {input_data['machine_type']}")
+    c.drawString(30, 710, f"Solvent: {input_data['solvent']}")
+    c.drawString(30, 690, f"Part Dimensions (mm):")
+    c.drawString(50, 670, f"Width: {input_data['part_width']}")
+    c.drawString(50, 650, f"Depth: {input_data['part_depth']}")
+    c.drawString(50, 630, f"Height: {input_data['part_height']}")
+    c.drawString(30, 610, f"Spacing Dimensions (mm):")
+    c.drawString(50, 590, f"Width: {input_data['spacing_width']}")
+    c.drawString(50, 570, f"Depth: {input_data['spacing_depth']}")
+    c.drawString(50, 550, f"Height: {input_data['spacing_height']}")
+
+    # Results
+    c.drawString(30, 530, f"Total Parts Fitted: {result['total_parts']}")
+    c.drawString(30, 510, f"Parts Along Width: {result['parts_along_width']}")
+    c.drawString(30, 490, f"Parts Along Depth: {result['parts_along_depth']}")
+    c.drawString(30, 470, f"Parts Along Height: {result['parts_along_height']}")
+
+    # Add plot image
+    c.drawImage(plot_buffer, 100, 200, width=400, height=250)
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
+# Streamlit App
+st.title("Chamber Parts Fitting Visualizer with PDF Export")
 
 # Input Fields
 machine_type = st.selectbox("Select Machine Type", ["SF50", "SF100"])
 part_width = st.number_input("Part Width (mm)", min_value=1, value=50)
 part_depth = st.number_input("Part Depth (mm)", min_value=1, value=50)
 part_height = st.number_input("Part Height (mm)", min_value=1, value=100)
-
-# Dynamic Spacing Fields Based on Solvent
 solvent = st.selectbox("Select Solvent", ["FA326", "PURE"], index=0)
 
-# Default spacing values
-default_spacing_width = 10
-default_spacing_depth = 10
-default_spacing_height = 30
-
-# Adjust spacing if solvent is PURE
+# Spacing Input
+default_spacing = 10
 if solvent == "PURE":
-    default_spacing_width += 10
-    default_spacing_depth += 10
-    default_spacing_height += 10
-
-# Display input fields for spacing, pre-populated with dynamic values
-spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=default_spacing_width)
-spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=default_spacing_depth)
-spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=default_spacing_height)
+    default_spacing += 10
+spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=default_spacing)
+spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=default_spacing)
+spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=default_spacing)
 
 # Prepare Input Data
 input_data = {
@@ -136,8 +164,10 @@ input_data = {
     "solvent": solvent,
 }
 
-if st.button("Calculate and Visualize"):
+if st.button("Generate Report"):
     result = calculate_parts_fitting(input_data)
     if result:
         st.write(f"Total Parts: {result['total_parts']}")
-        visualize_chamber_3d(result, input_data)
+        plot_buffer = visualize_chamber_3d(result, input_data)
+        pdf_buffer = generate_pdf(input_data, result, plot_buffer)
+        st.download_button("Download PDF Report", data=pdf_buffer, file_name="report.pdf", mime="application/pdf")
