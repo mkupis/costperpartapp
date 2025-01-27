@@ -145,6 +145,9 @@ spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=10 if s
 spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=10 if solvent != "PURE" else 20)
 spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=30)  # Always starts at 30
 
+# Password Input
+password = st.text_input("Enter Password", type="password")
+
 # Prepare Input Data
 input_data = {
     "machine_type": machine_type,
@@ -158,10 +161,13 @@ input_data = {
 }
 
 if st.button("Generate Report"):
-    result = calculate_parts_fitting(input_data)
-    if result:
-        st.write(f"Total Parts: {result['total_parts']}")
-        plot_buffer = visualize_chamber_3d(result, input_data)
-        st.image(plot_buffer, caption="3D Visualization of Parts in Chamber", use_container_width=True)
-        pdf_buffer = generate_pdf(input_data, result, plot_buffer)
-        st.download_button("Download PDF Report", data=pdf_buffer, file_name="report.pdf", mime="application/pdf")
+    if password != "w6g2piZRbnjG1RF":
+        st.error("Incorrect password. Please try again.")
+    else:
+        result = calculate_parts_fitting(input_data)
+        if result:
+            st.write(f"Total Parts: {result['total_parts']}")
+            plot_buffer = visualize_chamber_3d(result, input_data)
+            st.image(plot_buffer, caption="3D Visualization of Parts in Chamber", use_container_width=True)
+            pdf_buffer = generate_pdf(input_data, result, plot_buffer)
+            st.download_button("Download PDF Report", data=pdf_buffer, file_name="report.pdf", mime="application/pdf")
