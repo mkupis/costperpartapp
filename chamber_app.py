@@ -123,17 +123,18 @@ def generate_pdf(input_data, result, view_buffers):
     pdf = FPDF()
     pdf.add_page()
 
-    pdf.set_font("Arial", size=24)
+    # Add logo and title
+    pdf.set_font("BebasNeue", size=28)
     pdf.set_text_color(79, 195, 202)
-    pdf.cell(200, 10, txt="Chamber Parts Fitting Report", ln=True, align="C")
+    pdf.cell(200, 15, txt="Chamber Parts Fitting Report", ln=True, align="C")
+    pdf.image("company_logo.png", x=85, y=25, w=40)
+    pdf.ln(30)
 
     pdf.set_font("Arial", size=12)
     pdf.set_text_color(0, 0, 0)
-    pdf.ln(10)
     pdf.cell(0, 10, f"Machine Type: {input_data['machine_type']}", ln=True)
     pdf.cell(0, 10, f"Solvent: {input_data['solvent']}", ln=True)
     pdf.cell(0, 10, f"Part Dimensions (mm): {input_data['part_width']} x {input_data['part_depth']} x {input_data['part_height']}", ln=True)
-
     pdf.ln(10)
     pdf.cell(0, 10, f"Total Parts: {result['total_parts']}", ln=True)
 
