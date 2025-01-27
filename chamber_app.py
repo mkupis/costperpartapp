@@ -20,7 +20,7 @@ def calculate_parts_fitting(input_data):
     if solvent == "PURE":
         chamber_clearance_width += 50
         chamber_clearance_depth += 50
-        chamber_clearance_height += 50
+        # No change for spacing_height or chamber_clearance_height for PURE.
 
     effective_chamber_width = chamber_width - chamber_clearance_width
     effective_chamber_depth = chamber_depth - chamber_clearance_depth
@@ -138,15 +138,12 @@ machine_type = st.selectbox("Select Machine Type", ["SF50", "SF100"])
 part_width = st.number_input("Part Width (mm)", min_value=1, value=50)
 part_depth = st.number_input("Part Depth (mm)", min_value=1, value=50)
 part_height = st.number_input("Part Height (mm)", min_value=1, value=100)
-solvent = st.selectbox("Select Solvent", ["FA326", "PURE"], index=0)
+solvent = st.selectbox("Select Solvent", ["", "PURE"], index=0)
 
 # Spacing Input
-default_spacing = 10
-if solvent == "PURE":
-    default_spacing += 10
-spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=default_spacing)
-spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=default_spacing)
-spacing_height = st.number_input("Spacing Height (mm)", min_value=0, value=default_spacing)
+spacing_width = st.number_input("Spacing Width (mm)", min_value=0, value=10 if solvent != "PURE" else 20)
+spacing_depth = st.number_input("Spacing Depth (mm)", min_value=0, value=10 if solvent != "PURE" else 20)
+spacing_height = 30  # Always constant
 
 # Prepare Input Data
 input_data = {
@@ -160,11 +157,13 @@ input_data = {
     "solvent": solvent,
 }
 
+result = None
+plot_buffer = None
+
 if st.button("Generate Report"):
     result = calculate_parts_fitting(input_data)
     if result:
-        st.write(f"Total Parts: {result['total_parts']}")
         plot_buffer = visualize_chamber_3d(result, input_data)
-        st.image(plot_buffer, caption="3D Visualization of Parts in Chamber", use_column_width=True)
+        st.image(plot_buffer, caption="3D Visualization of Parts in Chamber", use_container_width=True)
         pdf_buffer = generate_pdf(input_data, result, plot_buffer)
         st.download_button("Download PDF Report", data=pdf_buffer, file_name="report.pdf", mime="application/pdf")
